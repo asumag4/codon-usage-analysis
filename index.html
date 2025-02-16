@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arthur Sumague</title>
+    <!-- Importing Our Modded Bootstrap Rules -->
+    <link href="scss/main.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <style>
+        section {
+            padding: 5em 10em;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .table {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-md navbar-light fixed-top">
+        <div class="container-xxl mt-2">
+            <a href="#intro" class="navbar-brand">
+                <span class="fw-bold text-secondary">
+                    <i class="bi bi-code-slash"></i>
+                    Codon Usage Analysis
+                </span>
+            </a>
+            <!-- Toggle Button for mobile navbar -->
+            <button 
+                class="navbar-toggler" 
+                type="button" 
+                data-bs-toggle="collapse"
+                data-bs-target="#main-nav"
+                aria-controls="main-nav"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+                > 
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- navbar links -->
+            <div 
+                class="collapse navbar-collapse justify-content-end align-center"
+                id="main-nav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="#introduction">Introduction</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#data-cleaning">Data Cleaning</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#eda">Exploratory Data Analysis</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Guiding Questions
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <li class="dropdown-item">
+                            <a class="nav-link" href="#frequencyusage-v-codon">Frequency Usage vs Codon</a>
+                        </li>
+                        <li class="dropdown-item">
+                            <a class="nav-link" href="#frequencyusage-v-amionoacid">Frequency Usage vs Amino Acid</a>
+                        </li>
+                        <li class="dropdown-item">
+                            <a class="nav-link" href="#frequencyusage-v-hydrophobicity">Frequency Usage vs Hydrophobicity</a>
+                        </li>
+                        <li class="dropdown-item">
+                            <a class="nav-link" href="#countofdnatype-v-kingdom">Count of DNA Type vs Kingdom</a>
+                        </li>
+                        <li class="dropdown-item">
+                            <a class="nav-link" href="#modelling">Modelling</a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#conclusion">Conclusion</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#references">References</a>
+                </li>
+            </ul>
+        </div>
+
+        </div>
+    </nav>
+
+    <main>
+        <!-- Introduction -->
+        <section id="introduction">
+            <div>
+                <h1>
+                    Introduction 
+                </h1>
+                <p>
+                    This is a comprhensive overview of codon usage frequencies in the genomic coding DNA, 
+                    tabulated in CUTG database (RNA). Included are codon frequencies from 514 genus, of which 
+                    13028 differing DNA species were found. 
+
+                    This project aims to explore the dataset to derive biological conclusions. As well as attempt to 
+                    create a predictive model; from codon characteristics, can we predict the Kingdom or the DNA type that 
+                    the sequence originated to?
+                </p>
+            </div>
+            <div id="previous-work">
+                <h3>
+                    Data Set & Previous Work
+                </h3>
+                <p>
+                    This dataset has been published in <a href="https://www.nature.com/articles/s41598-023-28965-7"> Nature - Scientific Reports </a> in Feb 2023 by Hallee & Khomtchouk. 
+
+                    The dataset was modelled by the authors, and we'll compare my proposed model with the published one to identify the steps taken and if <em>possible</em>, take a different appraoch but reach similar levels of accuracies. 
+                </p>
+            </div>
+            <div>
+                <h3>
+                    Codons Explained
+                </h3>
+                <p>
+                    Next, we'll go cover some domain knowledge so the reader is able to follow through the analyses and connect the insights draw out from the data. 
+
+                    We'll first compare how data is encoded through computers vs. biology. 
+
+                    In computers, we use binary code. In the modern world, it's covered by 64 bits, but I'll go over 8 bit binary code. For example; the 8 bit binary encoding for the word "Apple" is <code>01100001 01110000 01110000 01101100 01100101
+                    </code>, strung together.
+
+                    Now biology works in a similar fashion; 
+
+                    <b>Central Dogma of Biology</b>
+                    <img src="assets\images\figure-pics\central-dogma-biology.png">
+                    <ol>
+                        <li><b>DNA</b>: Long-term (genetic material inherited from our parents) information that determines who we become. This is like the source code of a program. It contains all the instructions and data necessary for the program to function but isn't actively running the processes.</li>
+                        <li><b>mRNA</b>: RAM Data (mRNA): Think of this as the compiled bytecode or an intermediate representation of the program. It takes the essential parts of the source code (genes) and brings them to the CPU (ribosomes) for execution.</li>
+                        <li><b>Polypeptide</b>: when folded, it becomes an active machine called a **Protein** that enables cellular active and whats makes/ keeps you alive. It's synonymous to the executable program, once the program is running, it performs various functions, analogous to how proteins carry out various functions in a cell.</li>
+                    </ol>
+
+                    We'll be studying mRNA level of code, and triplets of each unit of data (RNA base) map to an amino acid. [For example; AUG maps to methionine; an amino acid usually used at the start of translation.] And a string of amino acids (when folded) make a protein!  
+                </p>
+            </div>
+            <div>
+                <h3>
+                    Chemical Phases
+                </h3>
+                <p>
+                    Let's just review quickly about chemical character; **hydrophobicity** (does not mix with water) and **hydrophilicity** (does mix with water). I'm introducing this concept because amino acids hold either a hydrophobic or hydrophilic character. 
+
+                    *When an amino acid is hydrophilic*, when it is part of a protein, it will associate well with water, and will usually be found on the outside of the protein, interacting with water molecules. 
+
+                    *When an amino acid is hydrophobic* it will usually make up the inside of the protein, because it wants to hide and dissociate with water molecules, it will let hydrophillic amino acids do that. 
+
+                    Apart from making the insides of a protein, hydrophobic amino acids can make up the "outside" of membrane associating proteins. Membranes "phospholipid bilaryer" look this:
+                    <br>
+                    <img src="https://english.eagetutor.com/images/stories/cellbiology_cellmembrane1.gif">
+                    <br>
+                    and make up the "walls" of a cell! This is the core structure of what made & makes life possible! 
+
+                    That's it for now... I will continuously refer back to this section as I draw insights in the data!
+                </p>
+            </div>
+            <div>
+                <h3>
+                    About the Data
+                </h3>
+                <p>
+                    <img src="data:image/png;base64,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">
+
+                    The data is sourced from <a href="https://archive.ics.uci.edu/dataset/577/codon+usage">UC Irvine Machine Learning Repository</a>. They have a fantastic collection of data used in literature, I highly recommend this source.
+
+                    The data is displayed as follows: 
+
+                    <table class="dataframe">
+                    <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>Kingdom</td>
+                        <td>3-letter code corresponding to the CUTG database name: 'arc' (archaea), 'bct' (bacteria), 'phg' (bacteriophage), 'plm' (plasmid), 'pln' (plant), 'inv' (invertebrate), 'vrt' (vertebrate), 'mam' (mammal), 'rod' (rodent), 'pri' (primate), and 'vrl' (virus)</td>
+                    </tr>
+                    <tr>
+                        <td>DNAtype</td>
+                        <td>Integer denoting the genomic composition in the species: 
+                            <ul>
+                                <li>0 - genomic</li>
+                                <li>1 - mitochondrial</li>
+                                <li>2 - chloroplast</li>
+                                <li>3 - cyanelle</li>
+                                <li>4 - plastid</li>
+                                <li>5 - nucleomorph</li>
+                                <li>6 - secondary_endosymbiont</li>
+                                <li>7 - chromoplast</li>
+                                <li>8 - leucoplast</li>
+                                <li>9 - NA</li>
+                                <li>10 - proplastid</li>
+                                <li>11 - apicoplast</li>
+                                <li>12 - kinetoplast</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SpeciesID</td>
+                        <td>Unique integer identifier for each species entry in the original CUTG database</td>
+                    </tr>
+                    <tr>
+                        <td>Ncodons</td>
+                        <td>Algebraic sum of the numbers listed for different codons in a CUTG entry</td>
+                    </tr>
+                    <tr>
+                        <td>SpeciesName</td>
+                        <td>Descriptive label of the species name, purged of commas (replaced by spaces)</td>
+                    </tr>
+                    <tr>
+                        <td>Codon Frequencies</td>
+                        <td>Frequencies of codons ('UUU', 'UUA', 'UUG', 'CUU', etc.) recorded as floats with 5-digit precision</td>
+                    </tr>
+                </table>
+                </p>
+            </div>
+        </section>
+
+        <!-- Data Cleaning -->
+        <section id="data-cleaning">
+            <h1>
+                Data Cleaning & Exploratory Data Analysis
+            </h1>
+            <p>
+                <ul>
+                    <li>The data was screened for null values, none were found</li>
+                    <li>The data was screened for duplicated rows, none were found</li>
+                    <li><code>STOP</code> codon frequencies were recoded into <code>0</code> for <code>FrequencyUsage</code> values</li>
+                </ul>
+                Next, preliminary assessment of data distributions was conducted.
+            </p>
+        </section>
+
+        <section id="eda">
+            <div>
+                <h4>
+                    Summary Statistics for Features
+                </h4>
+                <div class="table summary-statistics">
+                    <style scoped>
+                        .dataframe tbody tr th:only-of-type {
+                            vertical-align: middle;
+                        }
+                    
+                        .dataframe tbody tr th {
+                            vertical-align: top;
+                        }
+                    
+                        .dataframe thead th {
+                            text-align: right;
+                        }
+                    </style>
+                    <table border="1" class="dataframe">
+                      <thead>
+                        <tr style="text-align: right;">
+                          <th></th>
+                          <th>DNAtype</th>
+                          <th>SpeciesID</th>
+                          <th>Ncodons</th>
+                          <th>UUU</th>
+                          <th>UUC</th>
+                          <th>UUA</th>
+                          <th>UUG</th>
+                          <th>CUU</th>
+                          <th>CUC</th>
+                          <th>CUA</th>
+                          <th>...</th>
+                          <th>CGG</th>
+                          <th>AGA</th>
+                          <th>AGG</th>
+                          <th>GAU</th>
+                          <th>GAC</th>
+                          <th>GAA</th>
+                          <th>GAG</th>
+                          <th>UAA</th>
+                          <th>UAG</th>
+                          <th>UGA</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <th>count</th>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>1.302800e+04</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>...</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                          <td>13028.000000</td>
+                        </tr>
+                        <tr>
+                          <th>mean</th>
+                          <td>0.367209</td>
+                          <td>130451.105926</td>
+                          <td>7.960576e+04</td>
+                          <td>0.010109</td>
+                          <td>0.010885</td>
+                          <td>0.020637</td>
+                          <td>0.014104</td>
+                          <td>0.017820</td>
+                          <td>0.018288</td>
+                          <td>0.019044</td>
+                          <td>...</td>
+                          <td>0.005454</td>
+                          <td>0.009929</td>
+                          <td>0.006422</td>
+                          <td>0.024178</td>
+                          <td>0.021164</td>
+                          <td>0.028290</td>
+                          <td>0.021683</td>
+                          <td>0.001645</td>
+                          <td>0.000592</td>
+                          <td>0.006178</td>
+                        </tr>
+                        <tr>
+                          <th>std</th>
+                          <td>0.688726</td>
+                          <td>124787.086107</td>
+                          <td>7.197010e+05</td>
+                          <td>0.018572</td>
+                          <td>0.016382</td>
+                          <td>0.020709</td>
+                          <td>0.009280</td>
+                          <td>0.010586</td>
+                          <td>0.014572</td>
+                          <td>0.024250</td>
+                          <td>...</td>
+                          <td>0.006605</td>
+                          <td>0.008574</td>
+                          <td>0.006387</td>
+                          <td>0.013828</td>
+                          <td>0.013041</td>
+                          <td>0.014342</td>
+                          <td>0.015018</td>
+                          <td>0.001834</td>
+                          <td>0.000907</td>
+                          <td>0.010344</td>
+                        </tr>
+                        <tr>
+                          <th>min</th>
+                          <td>0.000000</td>
+                          <td>7.000000</td>
+                          <td>1.000000e+03</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>...</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                        </tr>
+                        <tr>
+                          <th>25%</th>
+                          <td>0.000000</td>
+                          <td>28850.750000</td>
+                          <td>1.602000e+03</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.005610</td>
+                          <td>0.007108</td>
+                          <td>0.010890</td>
+                          <td>0.007830</td>
+                          <td>0.005307</td>
+                          <td>...</td>
+                          <td>0.001220</td>
+                          <td>0.001690</td>
+                          <td>0.001170</td>
+                          <td>0.012380</td>
+                          <td>0.011860</td>
+                          <td>0.017360</td>
+                          <td>0.009710</td>
+                          <td>0.000560</td>
+                          <td>0.000000</td>
+                          <td>0.000410</td>
+                        </tr>
+                        <tr>
+                          <th>50%</th>
+                          <td>0.000000</td>
+                          <td>81971.500000</td>
+                          <td>2.927500e+03</td>
+                          <td>0.000000</td>
+                          <td>0.000000</td>
+                          <td>0.015260</td>
+                          <td>0.013360</td>
+                          <td>0.016130</td>
+                          <td>0.014560</td>
+                          <td>0.009685</td>
+                          <td>...</td>
+                          <td>0.003530</td>
+                          <td>0.009270</td>
+                          <td>0.004545</td>
+                          <td>0.025420</td>
+                          <td>0.019070</td>
+                          <td>0.026085</td>
+                          <td>0.020540</td>
+                          <td>0.001380</td>
+                          <td>0.000420</td>
+                          <td>0.001130</td>
+                        </tr>
+                        <tr>
+                          <th>75%</th>
+                          <td>1.000000</td>
+                          <td>222891.250000</td>
+                          <td>9.120000e+03</td>
+                          <td>0.016230</td>
+                          <td>0.022122</td>
+                          <td>0.029485</td>
+                          <td>0.019810</td>
+                          <td>0.022730</td>
+                          <td>0.025112</td>
+                          <td>0.017245</td>
+                          <td>...</td>
+                          <td>0.007150</td>
+                          <td>0.015922</td>
+                          <td>0.010250</td>
+                          <td>0.034190</td>
+                          <td>0.027690</td>
+                          <td>0.036800</td>
+                          <td>0.031122</td>
+                          <td>0.002370</td>
+                          <td>0.000830</td>
+                          <td>0.002890</td>
+                        </tr>
+                        <tr>
+                          <th>max</th>
+                          <td>12.000000</td>
+                          <td>465364.000000</td>
+                          <td>4.066258e+07</td>
+                          <td>0.217300</td>
+                          <td>0.076120</td>
+                          <td>0.151330</td>
+                          <td>0.101190</td>
+                          <td>0.089780</td>
+                          <td>0.100350</td>
+                          <td>0.163920</td>
+                          <td>...</td>
+                          <td>0.055540</td>
+                          <td>0.098830</td>
+                          <td>0.058430</td>
+                          <td>0.185660</td>
+                          <td>0.113840</td>
+                          <td>0.144890</td>
+                          <td>0.158550</td>
+                          <td>0.045200</td>
+                          <td>0.025610</td>
+                          <td>0.106700</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p>8 rows × 67 columns</p>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        We should look into statistically testing (via t-test or z-test) whether each codon's mean FrequencyUsage is significantly different from the expected average (1 codon / 64 total possible codons) = 0.015625 Expected FrequencyUsage
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h4>
+                    Distribution of Codon Frequency Usage
+                </h4>
+                <img src="assets\images\distribution-of-numerical-features.png">
+            </div>
+            <div>
+                <h4>
+                    Boxplot of Codon Frequency Usage
+                </h4>
+                <img src="assets\images\boxplots-of-numerical-features.png">
+            </div>
+            <div>
+                <h4>
+                    Correlation Heatmap
+                </h4>
+                <img src="assets\images\correlation-heat-map.png">
+            </div>
+        </section>
+    
+        <!-- Q1: Codon Usage Bias Across Kingdoms -->
+        <section id="frequencyusage-v-codon" class="guiding-question">
+            <div class="question-description">
+                <h1>
+                    Codon Usage Bias Across Kingdoms
+                </h1>
+                <p>
+                    Investigate how different kingdoms (e.g., bacteria, mammals, viruses) prefer certain codons over others.
+                    Compare the frequency of synonymous codons for common amino acids across different domains of life.
+                    Identify whether evolutionary pressures (e.g., replication speed, GC content) influence codon bias in different groups.
+                </p>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Archaea
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\ARC-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Bacteria
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\BCT-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Invertebrate
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\INV-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Mammal
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\MAM-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Bacteriophage
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\PHG-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Plasmid
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\PLM-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Plants
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\PLN-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Primate
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\PRI-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Rodent
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\ROD-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Virus
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\VRL-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart" class="graph" data-src="graph1-data">
+                <h4>
+                    Vertebrate
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-codon\PHG-frequency-of-codon-usage-coloured-by-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div>
+                <h4>Summary</h4>
+                <!-- Most Used -->
+                <div class="table">
+                    <h5>Most used codon per kingdom, with amino acid it codes for</h5>
+                    <style scoped>
+                        .dataframe tbody tr th:only-of-type {
+                            vertical-align: middle;
+                        }
+                    
+                        .dataframe tbody tr th {
+                            vertical-align: top;
+                        }
+                    
+                        .dataframe thead th {
+                            text-align: right;
+                        }
+                    </style>
+                    <table border="1" class="dataframe">
+                    <thead>
+                        <tr style="text-align: right;">
+                        <th></th>
+                        <th>Kingdom</th>
+                        <th>Codon</th>
+                        <th>FrequencyUsage</th>
+                        <th>AminoAcid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                        <th>0</th>
+                        <td>arc</td>
+                        <td>GAG</td>
+                        <td>0.040009</td>
+                        <td>Glu</td>
+                        </tr>
+                        <tr>
+                        <th>1</th>
+                        <td>bct</td>
+                        <td>GAA</td>
+                        <td>0.035056</td>
+                        <td>Glu</td>
+                        </tr>
+                        <tr>
+                        <th>2</th>
+                        <td>inv</td>
+                        <td>UUC</td>
+                        <td>0.036281</td>
+                        <td>Phe</td>
+                        </tr>
+                        <tr>
+                        <th>3</th>
+                        <td>mam</td>
+                        <td>CUA</td>
+                        <td>0.059336</td>
+                        <td>Leu</td>
+                        </tr>
+                        <tr>
+                        <th>4</th>
+                        <td>phg</td>
+                        <td>AAA</td>
+                        <td>0.038438</td>
+                        <td>Lys</td>
+                        </tr>
+                        <tr>
+                        <th>5</th>
+                        <td>plm</td>
+                        <td>CUG</td>
+                        <td>0.037572</td>
+                        <td>Leu</td>
+                        </tr>
+                        <tr>
+                        <th>6</th>
+                        <td>pln</td>
+                        <td>GAA</td>
+                        <td>0.029851</td>
+                        <td>Glu</td>
+                        </tr>
+                        <tr>
+                        <th>7</th>
+                        <td>pri</td>
+                        <td>CUA</td>
+                        <td>0.039977</td>
+                        <td>Leu</td>
+                        </tr>
+                        <tr>
+                        <th>8</th>
+                        <td>rod</td>
+                        <td>CUA</td>
+                        <td>0.046230</td>
+                        <td>Leu</td>
+                        </tr>
+                        <tr>
+                        <th>9</th>
+                        <td>vrl</td>
+                        <td>AAA</td>
+                        <td>0.030086</td>
+                        <td>Lys</td>
+                        </tr>
+                        <tr>
+                        <th>10</th>
+                        <td>vrt</td>
+                        <td>CUA</td>
+                        <td>0.051200</td>
+                        <td>Leu</td>
+                        </tr>
+                    </tbody>
+                    </table>
+                </div>
+                <!-- Comment -->
+                <div class="card">
+                    <div class="card-body">
+                        Most used codons code for an electrically charged amino acid; Glu is a small negatively charged amino acid whilst Lys is a positively charged amino acid. 5/10 amino acids are charged. Leucine and Phenylalanine are hydrophobic (don't mix well with water) amino acids and have structural implications on interacting with membranes to make membrane associative proteins, or forming hydrophobic cores of proteins (more likely the former). 
+                    </div>
+                </div>
+                <!-- Least Used -->
+                <div class="table">
+                    <h5>Least used codon per kingdom, with amino acid it codes for</h5>
+                        <table border="1" class="dataframe">
+                        <thead>
+                            <tr style="text-align: right">
+                            <th></th>
+                            <th>Kingdom</th>
+                            <th>Codon</th>
+                            <th>FrequencyUsage</th>
+                            <th>AminoAcid</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                            <th>0</th>
+                            <td>arc</td>
+                            <td>UUC</td>
+                            <td>0.000000</td>
+                            <td>Phe</td>
+                            </tr>
+                            <tr>
+                            <th>1</th>
+                            <td>bct</td>
+                            <td>UUC</td>
+                            <td>0.000012</td>
+                            <td>Phe</td>
+                            </tr>
+                            <tr>
+                            <th>2</th>
+                            <td>inv</td>
+                            <td>UAG</td>
+                            <td>0.000752</td>
+                            <td>Stop</td>
+                            </tr>
+                            <tr>
+                            <th>3</th>
+                            <td>mam</td>
+                            <td>UAG</td>
+                            <td>0.000470</td>
+                            <td>Stop</td>
+                            </tr>
+                            <tr>
+                            <th>4</th>
+                            <td>phg</td>
+                            <td>UUC</td>
+                            <td>0.000000</td>
+                            <td>Phe</td>
+                            </tr>
+                            <tr>
+                            <th>5</th>
+                            <td>plm</td>
+                            <td>UUC</td>
+                            <td>0.000000</td>
+                            <td>Phe</td>
+                            </tr>
+                            <tr>
+                            <th>6</th>
+                            <td>pln</td>
+                            <td>UAG</td>
+                            <td>0.000589</td>
+                            <td>Stop</td>
+                            </tr>
+                            <tr>
+                            <th>7</th>
+                            <td>pri</td>
+                            <td>UAG</td>
+                            <td>0.000536</td>
+                            <td>Stop</td>
+                            </tr>
+                            <tr>
+                            <th>8</th>
+                            <td>rod</td>
+                            <td>UAG</td>
+                            <td>0.000317</td>
+                            <td>Stop</td>
+                            </tr>
+                            <tr>
+                            <th>9</th>
+                            <td>vrl</td>
+                            <td>UUC</td>
+                            <td>0.000000</td>
+                            <td>Phe</td>
+                            </tr>
+                            <tr>
+                            <th>10</th>
+                            <td>vrt</td>
+                            <td>UAG</td>
+                            <td>0.000701</td>
+                            <td>Stop</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        Now this is a very interesting find! We find that higher life-forms such as invertebrates, mammals, plants, primates, rodents, vertebrates all least used codons are for <code>Stop</code>. This refers to the efficiency that higher-life forms have; because they require less stops to make proteins that keep their cells alive. The way it works is that higher-life forms will read a long sequence, stop once, and cut up that long sequence, which the individual strands will form to make multiple proteins. Now for single cellular organisms such as archaea, bacteria, bacteriophages (viruses that infect bacteria specifically), plasmids (DNA that is easily shared between bacteria; think of the USB for bacteria), viruses.  
+
+                        Phenylalanine is the least used in most single-cellular-organisms because of the energetic cost used to create the amino acid in the first place. Evolution took care of not even saving the 'data' in genomes to use it [2].                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Q2: The Relationship Between DNA type and amino acid preference -->
+        <section id="frequencyusage-v-aminoacid" class="guiding-question">
+            <div class="question-description">
+                <h1>
+                    The Relationship Between DNA Type and Amino Preference
+                </h1>
+                <p>
+                    Compare codon usage between genomic vs. organellar DNA types (e.g., mitochondrial vs. nuclear codons).
+                    Identify unique codon usage patterns in specialized organelles (e.g., mitochondria often have altered genetic codes).
+                    Explore potential evolutionary adaptations in codon preference in chloroplasts vs. mitochondria vs. nuclear genomes.
+
+                    It's simple for non-bioligsts to understand what Kingdoms are, because the information map directly to species we all know, we know a mammal, a bacteria, a VIRUS. DNA types are a little bit more difficult to understand.. 
+
+                    Think of it this way; bacteria have parents too, and they inherit DNA from them; thats called genomic DNA. Now our cells have other components to make things efficient, like mitochondria (powerhouse of the cell). Mitochondria also have their own DNA (you may read further <a href="https://askabiologist.asu.edu/explore/cells-living-in-cells">here</a>) and so thats other type of DNA that we humans have. Plants have another compartment for photosynthesis (take light energy to make sugar) to occur, and thats in chloroplasts and they also have their own DNA. I will touch on those for now, I'll explain more if needed. 
+                </p>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Genomic
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\GENOMIC-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Secondary Endosymbiont
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\SECONDARY_ENDOSYMBIONT-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Plastid
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\PLASTID-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Chloroplast
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\CHLOROPLAST-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Mitochondrial
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\MITOCHONDRIAL-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Cyanelle
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\CYANELLE-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Chromoplast
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\CHROMOPLAST-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Uncategorized
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\NOT APPLICABLE-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Nucleomorph
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\NUCLEOMORPH-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Apicoplast
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\APICOPLAST-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Kinetoplast
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-aminoacid\KINETOPLAST-frequency-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    We find a generalizing profile of distribution throughout the DNA types. We find that for genomic, chloroplast, mitochondrial, and partially for kinetoplast; amino acid usage is mostly right-skewed distributed. The rest of the DNA types are varied, and almost normally distributed. Interesting, through this profiling, we can find DNAtypes that are more 'established' that organisms rely heavily on their survival such as genomic and mitochondrial & chloroplast DNA (energy) and kinetoplasts (DNA stable-storage technique). 
+                </div>
+            </div>
+            <p>Like in the previous question, we need a generalizing summary of our observations</p>
+            <div class=table>
+                <div>
+                    <style scoped>
+                        .dataframe tbody tr th:only-of-type {
+                            vertical-align: middle;
+                        }
+                    
+                        .dataframe tbody tr th {
+                            vertical-align: top;
+                        }
+                    
+                        .dataframe thead th {
+                            text-align: right;
+                        }
+                    </style>
+                    <table border="1" class="dataframe">
+                      <thead>
+                        <tr style="text-align: right;">
+                          <th></th>
+                          <th>DNATypeMapped</th>
+                          <th>AminoAcid</th>
+                          <th>FrequencyUsage</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <th>6</th>
+                          <td>Not Applicable</td>
+                          <td>Glu</td>
+                          <td>0.034785</td>
+                        </tr>
+                        <tr>
+                          <th>23</th>
+                          <td>apicoplast</td>
+                          <td>Asn</td>
+                          <td>0.056087</td>
+                        </tr>
+                        <tr>
+                          <th>53</th>
+                          <td>chloroplast</td>
+                          <td>Lys</td>
+                          <td>0.029255</td>
+                        </tr>
+                        <tr>
+                          <th>74</th>
+                          <td>chromoplast</td>
+                          <td>Lys</td>
+                          <td>0.034090</td>
+                        </tr>
+                        <tr>
+                          <th>90</th>
+                          <td>cyanelle</td>
+                          <td>Glu</td>
+                          <td>0.029925</td>
+                        </tr>
+                        <tr>
+                          <th>111</th>
+                          <td>genomic</td>
+                          <td>Glu</td>
+                          <td>0.029322</td>
+                        </tr>
+                        <tr>
+                          <th>139</th>
+                          <td>kinetoplast</td>
+                          <td>Phe</td>
+                          <td>0.059128</td>
+                        </tr>
+                        <tr>
+                          <th>156</th>
+                          <td>mitochondrial</td>
+                          <td>Ile</td>
+                          <td>0.039776</td>
+                        </tr>
+                        <tr>
+                          <th>179</th>
+                          <td>nucleomorph</td>
+                          <td>Lys</td>
+                          <td>0.059975</td>
+                        </tr>
+                        <tr>
+                          <th>200</th>
+                          <td>plastid</td>
+                          <td>Lys</td>
+                          <td>0.035934</td>
+                        </tr>
+                        <tr>
+                          <th>221</th>
+                          <td>secondary_endosymbiont</td>
+                          <td>Lys</td>
+                          <td>0.047550</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                <div class="card">
+                    <div class="card-body">
+                        Interestingly, 8 out of 10 DNAtypes on average, mostly use a charged amino acid. The only two are kinetoplasts and mitochondrial DNA that don't use a charged amino acid, instead use a hydrophobic. (Because what is a polar molecules, it has a positive and negativ end, it will interact very well with pos or neg charges. It's like a two-sided magnet!)
+
+                        Mitochondrial DNA use isoleucine alot because it's importance in energy production [3], and this is mostly done between membranes. So proteins within those membranes need isoleucine to integrate into hydrophobic membranes! 
+                        
+                        Kinetoplasts are like storage copies of mitochondrial DNA. They're like several copies of the same data in cloud servers, but for mitochondria. In order to hold onto and stabilize these large DNA stores, you'll need an amino acid that interacts well with DNA molecules, and thus the extensive use of phenylalanine. [4]. 
+                    </div>
+                </div>
+            </div>
+            <div class="table">
+                <div>
+                    <style scoped>
+                        .dataframe tbody tr th:only-of-type {
+                            vertical-align: middle;
+                        }
+                    
+                        .dataframe tbody tr th {
+                            vertical-align: top;
+                        }
+                    
+                        .dataframe thead th {
+                            text-align: right;
+                        }
+                    </style>
+                    <table border="1" class="dataframe">
+                      <thead>
+                        <tr style="text-align: right;">
+                          <th></th>
+                          <th>DNATypeMapped</th>
+                          <th>AminoAcid</th>
+                          <th>FrequencyUsage</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <th>16</th>
+                          <td>Not Applicable</td>
+                          <td>Stop</td>
+                          <td>0.000602</td>
+                        </tr>
+                        <tr>
+                          <th>37</th>
+                          <td>apicoplast</td>
+                          <td>Stop</td>
+                          <td>0.001392</td>
+                        </tr>
+                        <tr>
+                          <th>58</th>
+                          <td>chloroplast</td>
+                          <td>Stop</td>
+                          <td>0.000934</td>
+                        </tr>
+                        <tr>
+                          <th>76</th>
+                          <td>chromoplast</td>
+                          <td>Phe</td>
+                          <td>0.000000</td>
+                        </tr>
+                        <tr>
+                          <th>97</th>
+                          <td>cyanelle</td>
+                          <td>Phe</td>
+                          <td>0.000000</td>
+                        </tr>
+                        <tr>
+                          <th>121</th>
+                          <td>genomic</td>
+                          <td>Stop</td>
+                          <td>0.001019</td>
+                        </tr>
+                        <tr>
+                          <th>142</th>
+                          <td>kinetoplast</td>
+                          <td>Stop</td>
+                          <td>0.003794</td>
+                        </tr>
+                        <tr>
+                          <th>148</th>
+                          <td>mitochondrial</td>
+                          <td>Arg</td>
+                          <td>0.003718</td>
+                        </tr>
+                        <tr>
+                          <th>184</th>
+                          <td>nucleomorph</td>
+                          <td>Stop</td>
+                          <td>0.001042</td>
+                        </tr>
+                        <tr>
+                          <th>205</th>
+                          <td>plastid</td>
+                          <td>Stop</td>
+                          <td>0.000774</td>
+                        </tr>
+                        <tr>
+                          <th>223</th>
+                          <td>secondary_endosymbiont</td>
+                          <td>Phe</td>
+                          <td>0.000000</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        Once again, for least used amino acids across DNA types we see the same trend of being either stop or phenylalanine, just like across kingdoms. 
+
+                        How about for mitcohondria least using arginine? Current literature states that Arg has been recoded to 'Stop' codons. Because of this reassignment (AGA to AGG), we find less Arg codon in mitochondrial DNA! [5].
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h4>
+                    Adding Hydrophobicity Scales
+                </h4>
+                <p>
+                    We now see a trend; from the past two analyses: 
+
+                    50% of the most used codons map towards a hydrophillic amino acid (water soluble), so now let's 
+                    map a hydrophobicity values to each amino acid in another column to our codon_melted table    
+
+                    The problem is; amino acid chemical characteristics properties differ in their respective environment. 
+                    For example, a highly hydrophobic amino acid such as trp, by chemical composition seems hydrophobic (lack of highly electronegative atoms)
+                    however, due to it's pi network, the entire molecule itself can be polarized and thus act hydrophillic
+
+                    To counter this, let's just use & append published scales and see what our analysis brings up! 
+                </p>
+                <div class="table">
+                    <p>We will scrape the data from <a src="https://www.cgl.ucsf.edu/chimerax/docs/user/hydrophobicity.html">University of California - San Francisco</a> published hydrophobicity scales</p>
+                    <div>
+                        <style scoped>
+                            .dataframe tbody tr th:only-of-type {
+                                vertical-align: middle;
+                            }
+                        
+                            .dataframe tbody tr th {
+                                vertical-align: top;
+                            }
+                        
+                            .dataframe thead th {
+                                text-align: right;
+                            }
+                        </style>
+                        <table border="1" class="dataframe">
+                          <thead>
+                            <tr style="text-align: right;">
+                              <th></th>
+                              <th>Residue Type</th>
+                              <th>kdHydrophobicitya</th>
+                              <th>wwHydrophobicityb</th>
+                              <th>hhHydrophobicityc</th>
+                              <th>mfHydrophobicityd</th>
+                              <th>ttHydrophobicitye</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <th>0</th>
+                              <td>Ile</td>
+                              <td>4.5</td>
+                              <td>0.31</td>
+                              <td>-0.60</td>
+                              <td>-1.56</td>
+                              <td>1.97</td>
+                            </tr>
+                            <tr>
+                              <th>1</th>
+                              <td>Val</td>
+                              <td>4.2</td>
+                              <td>-0.07</td>
+                              <td>-0.31</td>
+                              <td>-0.78</td>
+                              <td>1.46</td>
+                            </tr>
+                            <tr>
+                              <th>2</th>
+                              <td>Leu</td>
+                              <td>3.8</td>
+                              <td>0.56</td>
+                              <td>-0.55</td>
+                              <td>-1.81</td>
+                              <td>1.82</td>
+                            </tr>
+                            <tr>
+                              <th>3</th>
+                              <td>Phe</td>
+                              <td>2.8</td>
+                              <td>1.13</td>
+                              <td>-0.32</td>
+                              <td>-2.20</td>
+                              <td>1.98</td>
+                            </tr>
+                            <tr>
+                              <th>4</th>
+                              <td>Cys</td>
+                              <td>2.5</td>
+                              <td>0.24</td>
+                              <td>-0.13</td>
+                              <td>0.49</td>
+                              <td>-0.30</td>
+                            </tr>
+                            <tr>
+                              <th>5</th>
+                              <td>Met</td>
+                              <td>1.9</td>
+                              <td>0.23</td>
+                              <td>-0.10</td>
+                              <td>-0.76</td>
+                              <td>1.40</td>
+                            </tr>
+                            <tr>
+                              <th>6</th>
+                              <td>Ala</td>
+                              <td>1.8</td>
+                              <td>-0.17</td>
+                              <td>0.11</td>
+                              <td>0.00</td>
+                              <td>0.38</td>
+                            </tr>
+                            <tr>
+                              <th>7</th>
+                              <td>Gly</td>
+                              <td>-0.4</td>
+                              <td>-0.01</td>
+                              <td>0.74</td>
+                              <td>1.72</td>
+                              <td>-0.19</td>
+                            </tr>
+                            <tr>
+                              <th>8</th>
+                              <td>Thr</td>
+                              <td>-0.7</td>
+                              <td>-0.14</td>
+                              <td>0.52</td>
+                              <td>1.78</td>
+                              <td>-0.32</td>
+                            </tr>
+                            <tr>
+                              <th>9</th>
+                              <td>Ser</td>
+                              <td>-0.8</td>
+                              <td>-0.13</td>
+                              <td>0.84</td>
+                              <td>1.83</td>
+                              <td>-0.53</td>
+                            </tr>
+                            <tr>
+                              <th>10</th>
+                              <td>Trp</td>
+                              <td>-0.9</td>
+                              <td>1.85</td>
+                              <td>0.30</td>
+                              <td>-0.38</td>
+                              <td>1.53</td>
+                            </tr>
+                            <tr>
+                              <th>11</th>
+                              <td>Tyr</td>
+                              <td>-1.3</td>
+                              <td>0.94</td>
+                              <td>0.68</td>
+                              <td>-1.09</td>
+                              <td>0.49</td>
+                            </tr>
+                            <tr>
+                              <th>12</th>
+                              <td>Pro</td>
+                              <td>-1.6</td>
+                              <td>-0.45</td>
+                              <td>2.23</td>
+                              <td>-1.52</td>
+                              <td>-1.44</td>
+                            </tr>
+                            <tr>
+                              <th>13</th>
+                              <td>His</td>
+                              <td>-3.2</td>
+                              <td>-0.96</td>
+                              <td>2.06</td>
+                              <td>4.76</td>
+                              <td>-1.44</td>
+                            </tr>
+                            <tr>
+                              <th>14</th>
+                              <td>Glu</td>
+                              <td>-3.5</td>
+                              <td>-2.02</td>
+                              <td>2.68</td>
+                              <td>1.64</td>
+                              <td>-2.90</td>
+                            </tr>
+                            <tr>
+                              <th>15</th>
+                              <td>Gln</td>
+                              <td>-3.5</td>
+                              <td>-0.58</td>
+                              <td>2.36</td>
+                              <td>3.01</td>
+                              <td>-1.84</td>
+                            </tr>
+                            <tr>
+                              <th>16</th>
+                              <td>Asp</td>
+                              <td>-3.5</td>
+                              <td>-1.23</td>
+                              <td>3.49</td>
+                              <td>2.95</td>
+                              <td>-3.27</td>
+                            </tr>
+                            <tr>
+                              <th>17</th>
+                              <td>Asn</td>
+                              <td>-3.5</td>
+                              <td>-0.42</td>
+                              <td>2.05</td>
+                              <td>3.47</td>
+                              <td>-1.62</td>
+                            </tr>
+                            <tr>
+                              <th>18</th>
+                              <td>Lys</td>
+                              <td>-3.9</td>
+                              <td>-0.99</td>
+                              <td>2.71</td>
+                              <td>5.39</td>
+                              <td>-3.46</td>
+                            </tr>
+                            <tr>
+                              <th>19</th>
+                              <td>Arg</td>
+                              <td>-4.5</td>
+                              <td>-0.81</td>
+                              <td>2.58</td>
+                              <td>3.71</td>
+                              <td>-2.57</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Q3: Investigate DNA Types and How they Trend and Differ Throughout Kingdoms and in Frequency Use -->
+        <section id="frequencyusage-v-hydrophobicity">
+            <div class="question-description">
+                <h1>
+                    Investigate DNA Types and How they Trend and Differ Throughout Kingdoms and in Frequency Use
+                </h1>
+                <p>
+                    Several DNA types across kingdoms pin-point to their functional use/ niche role in biology. Can we discern general trends by analyzing the features in the dataset across DNA types and Kingdoms? 
+                </p>
+            </div>
+        
+            <div>
+                <h4>Which Kingdoms Have the Most DNA Type Diversity?</h4>
+                <iframe src="assets\plotly-graphs\count-of-dnatype-per-kingdom.html" width="100%" height="600px"></iframe>
+            </div>
+
+            <h4> Frequency Usage vs. Hydrophobicity </h4>
+            <div class="frequencyusage-v-hydrophobicity-chart">
+                <h4>
+                    Bacteria
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-hydrophobicity\BCT-frequency-of-codon-usage-by-the-hydrophobicity-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="codon-usage-bias-chart">
+                <h4>
+                    Invertebrate
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-hydrophobicity\INV-frequency-of-codon-usage-by-the-hydrophobicity-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+            <div class="frequencyusage-v-hydrophobicity-chart">
+                <h4>
+                    Plants
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-hydrophobicity\PLN-frequency-of-codon-usage-by-the-hydrophobicity-of-amino-acid.html" width="100%" height="600px"></iframe>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    Just like with the previous analyses, hydrophobicity values tend to be more 'modal' or concentrated throughout the spread of genomic, chloroplast, mitochondrial DNA's. 
+
+                    But for other DNA types, the spread looks mostly uniform across FrequencyUsage vs. kdHydrophobicity. 
+                    
+                    This points to the drastic selection pressure these life-dependent DNA types have undergone, that they have precisely chosen select amino acids for specific use, whereas other DNA types are 'random'. I do wonder if, this means that genetic mutations across these non-specialized DNA types indicate resistance to function, because what does it matter if it does change?   
+                </div>
+            </div>
+            
+            <div>
+                <h4>
+                    Linear Regression Plot of FrequencyUsge vs. kdHydrophobicity, with 95% Confidence Interval
+                </h4>
+                <img src="assets\plotly-graphs\frequencyusage-v-hydrophobicity\linear_regression_plot.png"> 
+                <div class="card">
+                    <div class="card-body">
+                        We can see in this distribution all the points throughout the dataset and the predicted FrequencyUsage from the linear regression line. From this line, we see a straight line, indicating an indiscernable relationship between the two factors. Overall, throughout the kingdoms of life, no one particular chemical property is selected for specifically, each has their own use and importance in cellular biology. 
+
+                        *NOTE: that a measurement of 0 = stop.* 
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="frequencyusage-v-hydrophobicity-parrallel">
+                <h4>
+                    Bacterial
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-hydrophobicity-parrallel\bacterial-parrallel-coordinates.html" width="100%" height="600px"></iframe>
+                <div class="card">
+                    <div class="card-body">
+                        There is much greater variability in the number of codons as well as FrequencyUsage amongst Bacteria. This points towards their genetic variability, with bacteria being known to live in the harshest of climates or on bare-minimum resources. Interestingly enough, DNA types 4 and 6 (plastids and secondary endosymbionts) have lower FrequencyUsage counts, indicating a selective pressures to select for specific codons in these DNA types. Therefore, these genomes are more tuned towards specific chemical properties for specific actions whereas genomic DNA has wider capacity of activity.                     
+                    </div>
+                </div>
+            </div>
+            <div class="frequencyusage-v-hydrophobicity-parrallel">
+                <h4>
+                    Invertebrate
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-hydrophobicity-parrallel\invertebrate-parrallel-coordinates.html" width="100%" height="600px"></iframe>
+                <div class="card">
+                    <div class="card-body">
+                        Unlike bacteria where there is great variation in Ncodons, invertebrates (animals without backbones) tend to have ~1 million codons, with some recorded species having more than 1 million codons. Just like with plants, the lower count species have higher FrequencyUsages for select codons, whilst all higher codon count species have lower, more specialized & selected FrequencyUsages.                      
+                    </div>
+                </div>
+            </div>
+            <div class="frequencyusage-v-hydrophobicity-parrallel">
+                <h4>
+                    Plants
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-hydrophobicity-parrallel\plants-parrallel-coordinates.html" width="100%" height="600px"></iframe>
+                <div class="card">
+                    <div class="card-body">
+                        We can find two things from this graph. 
+
+                        1. Genomic DNA (type 0) varies quite greatly amongst plants, from short ~1 million codons to 34 million codons. We find that the highest codon counts yield lower FrequencyUsage measurements, indicating that species with larger genomes tend to have a more specialized genome, carefully selecting for specific codons/ amino acids to use. Interestingly; lower Ncodons count for genomic DNA have high FrequencyUsage measurements for their codons, which map to a charged amino acid (negative hydrophobicity). 
+                        2. In contrast to observation 1, a similar observtation is seen for non-genomic DNA. Let's first take a look at genomic types 2 and 3 (mitochondrial and chloroplast DNA respectively). We find a similar pattern with genomic DNA, where they tend to have lower FrequencyUsage, however; mitochondrial DNA seems to have higher FrequencyUsage, indicative of a larger repoitoire of chemical properties used throughout it's genome. The data is pointing towards more chemical property usage with higher FrequencyUsage values, throughout larger systems such as mitochondria and genomic DNA.                
+                    </div>
+                </div>
+            </div>
+            <div class="frequencyusage-v-hydrophobicity-parrallel">
+                <h4>
+                    Mammalian
+                </h4>
+                <iframe src="assets\plotly-graphs\frequencyusage-v-hydrophobicity-parrallel\plants-parrallel-coordinates.html" width="100%" height="600px"></iframe>
+                <div class="card">
+                    <div class="card-body">
+                        Now this is a very interesting profile for mitochondial and genomic DNA for mammals. We find that the FrequencyUsage varies greater for mitochondrial DNA than genomic DNA. This points towards greater variability found in amino acids usage, indicating more chemical properties are utilized within mitochondria than for genomic DNA in mammals specifically. This also aligns with the observations of greater genetic variability in mitochondrial DNA than genomic DNA. Perhaps, the reason why we see this variation is because of the thousands of iterations that mitchondrial DNA has undergone for life to occur outside of the oceans and to develop a highly efficient oxygen-burning engine. 
+
+                        **Fun Fact** did you know mitochondria is more effient than modern car engines? Read more <a src="https://www.illinoisscience.org/blog/mitochondria-are-more-than-just-the-powerhouse-of-the-cell/">here</a>!                    
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Q4: What is the Genetic Variation within Kingdoms and DNAtypes? -->
+        <section id="countofdnatype-v-kingdom">
+            <div class="question-description">
+                <h1>
+                    What is the Genetic Variation within Kingdoms and DNAtypes?  
+                </h1>
+                <p>
+                    This analysis topic serves to investigate the genetic diversity of Kingdoms and DNA types. Can we find patterns, trends or outliers within each category of genetic material of life?                  
+                </p>
+            </div>
+
+            <div id="sumofdnatype-v-kingdom-chart">
+                <h4>
+                    Sum of all Recorded Codons per Kingdom, Coloured by DNA Type
+                </h4>
+                <iframe src="assets\plotly-graphs\count-of-dna-type\sum-of-all-recorded-codon-count-per-kingdom-coloured-by-dna-type.html" width="100%" height="600px"></iframe>
+                <div class="card">
+                    <div class="card-body">
+                        We find that the majority of DNA is bacterial. 
+                        There are so many bacterial species that the count of recorded variation in their genome is larger than the variation in all other kingdoms combined!                     
+                    </div>
+                </div>
+            </div>
+
+            <div id="countofdnatype-v-kingdom-chart">
+                <h4>
+                    Count of Each Unique Recorded Codons per Kingdom, Coloured by DNA Type
+                </h4>
+                <iframe src="assets\plotly-graphs\count-of-dna-type\count-of-all-recorded-codon-count-per-kingdom-coloured-by-dna-type.html" width="100%" height="600px"></iframe>
+                <div class="card">
+                    <div class="card-body">
+                        This is a very interesting find. So this points towards the count of unique recorded codon for each species categorized in their DNAtypes for all kingdoms. We find that there is a larger proportion of counts for mitochondrial DNA than for genomic DNA for mostly land animals (mammals, primates, rodents, and vertebrates)! There are aquatic mammals like whales and dolphins, but they are warm-blooded and require oxygen for respiration. This indicates the degree of genetic variability found in mitochondria alone. This is a glimpse of the sheer number of trial and error iterations throughout the millenia to make us (humans) happen!                      
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Q5: Creating a Predictive Model, Can We Do It? -->
+        <section id="modelling">
+            <div class="question-description">
+                <h1>
+                    Creating a Predictive Model, Can We Do It?  
+                </h1>
+                <p>
+                    We're going to attempt trying to predict via DNAtype and by Kingdom, and 
+                    test to compare which one is better, the better model will then be 
+                    analyzed to see what makes it a better model                       
+                </p>
+            </div>
+            
+            <!-- Predicting Kingdoms -->
+            <div>
+                <h2>Predicting Kingdoms</h3>
+                <!-- All Scales Model -->
+                <div id="all-model">
+                    <h3>
+                        Model 1: Considering all hydrophobicity scales
+                    </h3>
+                    <div class="all-classification-report table">
+                        <h4>
+                            Classification Report, All Hydrophobicity Scales
+                        </h4>
+                        <div class="table">
+                            <style scoped>
+                                .dataframe tbody tr th:only-of-type {
+                                    vertical-align: middle;
+                                }
+                            
+                                .dataframe tbody tr th {
+                                    vertical-align: top;
+                                }
+                            
+                                .dataframe thead th {
+                                    text-align: right;
+                                }
+                            </style>
+                            <table border="1" class="dataframe">
+                              <thead>
+                                <tr style="text-align: right;">
+                                  <th></th>
+                                  <th>precision</th>
+                                  <th>recall</th>
+                                  <th>f1-score</th>
+                                  <th>support</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <th>arc</th>
+                                  <td>0.128429</td>
+                                  <td>0.247596</td>
+                                  <td>0.169130</td>
+                                  <td>832.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>bct</th>
+                                  <td>0.574224</td>
+                                  <td>0.513575</td>
+                                  <td>0.542209</td>
+                                  <td>41877.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>inv</th>
+                                  <td>0.231508</td>
+                                  <td>0.297844</td>
+                                  <td>0.260519</td>
+                                  <td>13356.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>mam</th>
+                                  <td>0.370315</td>
+                                  <td>0.438367</td>
+                                  <td>0.401478</td>
+                                  <td>6198.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>phg</th>
+                                  <td>0.274266</td>
+                                  <td>0.387885</td>
+                                  <td>0.321327</td>
+                                  <td>2047.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>plm</th>
+                                  <td>0.076190</td>
+                                  <td>0.131148</td>
+                                  <td>0.096386</td>
+                                  <td>122.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>pln</th>
+                                  <td>0.514968</td>
+                                  <td>0.549531</td>
+                                  <td>0.531689</td>
+                                  <td>30082.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>pri</th>
+                                  <td>0.095667</td>
+                                  <td>0.182787</td>
+                                  <td>0.125598</td>
+                                  <td>1220.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>rod</th>
+                                  <td>0.187978</td>
+                                  <td>0.299478</td>
+                                  <td>0.230976</td>
+                                  <td>1723.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>vrl</th>
+                                  <td>0.568323</td>
+                                  <td>0.498674</td>
+                                  <td>0.531225</td>
+                                  <td>41468.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>vrt</th>
+                                  <td>0.661185</td>
+                                  <td>0.629805</td>
+                                  <td>0.645114</td>
+                                  <td>27834.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>accuracy</th>
+                                  <td>0.507901</td>
+                                  <td>0.507901</td>
+                                  <td>0.507901</td>
+                                  <td>0.507901</td>
+                                </tr>
+                                <tr>
+                                  <th>macro avg</th>
+                                  <td>0.334823</td>
+                                  <td>0.379699</td>
+                                  <td>0.350514</td>
+                                  <td>166759.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>weighted avg</th>
+                                  <td>0.527792</td>
+                                  <td>0.507901</td>
+                                  <td>0.515802</td>
+                                  <td>166759.000000</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                        </div>
+                        <p><b>Accuracy: 50.7%</b></p>
+                    </div>
+                    <div class="all-confusion-matrix">
+                        <h4>
+                            Confusion Matrix, All Hydrophobicity Scales
+                        </h4>
+                        <img src="assets\tables\all-models_confusion-matrix.png" with="100%"/>
+                    </div>
+                    <div class="all-confusion-matrix">
+                        <h4>
+                            Features, All Hydrophobicity Scales
+                        </h4>
+                        <img src="assets\tables\all-models_features.png" with="100%"/>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            The model performs poorly with an accuracy of 51%. Is there a way we can improve this? Perhaps appending more scales made the model "overfit"? Let's go back to just using the kd-scale.                       
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Kd Scale Model -->
+                <div id="kd-model">
+                    <h3>
+                        Model 2: Considering just Kyte-Doolittle Scale in the Model
+                    </h3>
+                    <div class="kd-classification-report">
+                        <h4>
+                            Classification Report, Kd-Hydrophobicity Scale
+                        </h4>
+                        <div class="table">
+                            <div>
+                                <style scoped>
+                                    .dataframe tbody tr th:only-of-type {
+                                        vertical-align: middle;
+                                    }
+                                
+                                    .dataframe tbody tr th {
+                                        vertical-align: top;
+                                    }
+                                
+                                    .dataframe thead th {
+                                        text-align: right;
+                                    }
+                                </style>
+                                <table border="1" class="dataframe">
+                                  <thead>
+                                    <tr style="text-align: right;">
+                                      <th></th>
+                                      <th>precision</th>
+                                      <th>recall</th>
+                                      <th>f1-score</th>
+                                      <th>support</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <th>arc</th>
+                                      <td>0.250000</td>
+                                      <td>0.470657</td>
+                                      <td>0.326547</td>
+                                      <td>852.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>bct</th>
+                                      <td>0.633550</td>
+                                      <td>0.567042</td>
+                                      <td>0.598454</td>
+                                      <td>41847.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>inv</th>
+                                      <td>0.350579</td>
+                                      <td>0.442064</td>
+                                      <td>0.391042</td>
+                                      <td>13627.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>mam</th>
+                                      <td>0.521603</td>
+                                      <td>0.612124</td>
+                                      <td>0.563250</td>
+                                      <td>6252.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>phg</th>
+                                      <td>0.341623</td>
+                                      <td>0.480797</td>
+                                      <td>0.399435</td>
+                                      <td>2057.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>plm</th>
+                                      <td>0.157143</td>
+                                      <td>0.314286</td>
+                                      <td>0.209524</td>
+                                      <td>105.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>pln</th>
+                                      <td>0.579888</td>
+                                      <td>0.618665</td>
+                                      <td>0.598649</td>
+                                      <td>30089.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>pri</th>
+                                      <td>0.255684</td>
+                                      <td>0.447112</td>
+                                      <td>0.325328</td>
+                                      <td>1333.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>rod</th>
+                                      <td>0.339162</td>
+                                      <td>0.503243</td>
+                                      <td>0.405223</td>
+                                      <td>1850.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>vrl</th>
+                                      <td>0.633403</td>
+                                      <td>0.558106</td>
+                                      <td>0.593375</td>
+                                      <td>41295.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>vrt</th>
+                                      <td>0.731867</td>
+                                      <td>0.706834</td>
+                                      <td>0.719133</td>
+                                      <td>27452.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>accuracy</th>
+                                      <td>0.585252</td>
+                                      <td>0.585252</td>
+                                      <td>0.585252</td>
+                                      <td>0.585252</td>
+                                    </tr>
+                                    <tr>
+                                      <th>macro avg</th>
+                                      <td>0.435864</td>
+                                      <td>0.520084</td>
+                                      <td>0.466360</td>
+                                      <td>166759.000000</td>
+                                    </tr>
+                                    <tr>
+                                      <th>weighted avg</th>
+                                      <td>0.600549</td>
+                                      <td>0.585252</td>
+                                      <td>0.590413</td>
+                                      <td>166759.000000</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                                </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                We didn't find that this model performs better (8% increase in accuracy), but is still not up to par with models from published literature. What if we use a different scale, one that isn't so diverse in values for the model to generalize better. From the previous model, we find that tthydrophobic to be the best contributing predictor, in comparison to the other scales.                            </div>
+                        </div>
+                        <p><b>Accuracy: 58.5%</b></p>
+                    </div>
+                    <div class="all-confusion-matrix">
+                        <h4>
+                            Confusion Matrix, Kd-Hydrophobicity Scales
+                        </h4>
+                        <img src="assets\tables\kd-models_confusion-matrix.png" with="100%"/>
+                    </div>
+                    <div class="all-confusion-matrix">
+                        <h4>
+                            Features, Kd-Hydrophobicity Scales
+                        </h4>
+                        <img src="assets\tables\kd-models_features.png" with="100%"/>
+                    </div>
+                </div>
+            
+            
+                <!-- tt-Scale Model -->
+                <div id="tt-model-kingdom">
+                    <h3>
+                        Model 3: Considering just the theoretical limit in characterizing amino-acid character in transmembranes (tt) in the Model. 
+                    </h3>
+                    <div class="table">
+                        <h4>
+                            Classification Report, tt-Hydrophobicity Scale
+                        </h4>
+                        <div>
+                            <style scoped>
+                                .dataframe tbody tr th:only-of-type {
+                                    vertical-align: middle;
+                                }
+                            
+                                .dataframe tbody tr th {
+                                    vertical-align: top;
+                                }
+                            
+                                .dataframe thead th {
+                                    text-align: right;
+                                }
+                            </style>
+                            <table border="1" class="dataframe">
+                              <thead>
+                                <tr style="text-align: right;">
+                                  <th></th>
+                                  <th>precision</th>
+                                  <th>recall</th>
+                                  <th>f1-score</th>
+                                  <th>support</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <th>arc</th>
+                                  <td>0.286783</td>
+                                  <td>0.516274</td>
+                                  <td>0.368737</td>
+                                  <td>891.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>bct</th>
+                                  <td>0.647621</td>
+                                  <td>0.580287</td>
+                                  <td>0.612108</td>
+                                  <td>41800.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>inv</th>
+                                  <td>0.365594</td>
+                                  <td>0.462388</td>
+                                  <td>0.408333</td>
+                                  <td>13586.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>mam</th>
+                                  <td>0.523238</td>
+                                  <td>0.620094</td>
+                                  <td>0.567564</td>
+                                  <td>6191.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>phg</th>
+                                  <td>0.358895</td>
+                                  <td>0.507324</td>
+                                  <td>0.420392</td>
+                                  <td>2048.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>plm</th>
+                                  <td>0.200000</td>
+                                  <td>0.378378</td>
+                                  <td>0.261682</td>
+                                  <td>111.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>pln</th>
+                                  <td>0.591726</td>
+                                  <td>0.633970</td>
+                                  <td>0.612120</td>
+                                  <td>29962.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>pri</th>
+                                  <td>0.265980</td>
+                                  <td>0.463032</td>
+                                  <td>0.337875</td>
+                                  <td>1339.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>rod</th>
+                                  <td>0.352277</td>
+                                  <td>0.518777</td>
+                                  <td>0.419614</td>
+                                  <td>1864.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>vrl</th>
+                                  <td>0.650882</td>
+                                  <td>0.569016</td>
+                                  <td>0.607202</td>
+                                  <td>41621.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>vrt</th>
+                                  <td>0.738883</td>
+                                  <td>0.716375</td>
+                                  <td>0.727455</td>
+                                  <td>27346.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>accuracy</th>
+                                  <td>0.598307</td>
+                                  <td>0.598307</td>
+                                  <td>0.598307</td>
+                                  <td>0.598307</td>
+                                </tr>
+                                <tr>
+                                  <th>macro avg</th>
+                                  <td>0.452898</td>
+                                  <td>0.542356</td>
+                                  <td>0.485735</td>
+                                  <td>166759.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>weighted avg</th>
+                                  <td>0.613626</td>
+                                  <td>0.598307</td>
+                                  <td>0.603304</td>
+                                  <td>166759.000000</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            </div>
+                        <p><b>Accuracy: 60.4%</b></p>
+                    </div>
+                    <div class="all-confusion-matrix">
+                        <h4>
+                            Confusion Matrix, tt-Hydrophobicity Scales
+                        </h4>
+                        <img src="assets\tables\tt-models_confusion-matrix.png" with="100%"/>
+                    </div>
+                    <div class="all-confusion-matrix">
+                        <h4>
+                            Features, tt-Hydrophobicity Scales
+                        </h4>
+                        <img src="assets\tables\tt-models_features.png" with="100%"/>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            Very interesting how even the labels we use to differentiate amino acid hydrophobicity has an effect on the model's performance, perhaps because kdHydrophobicity has more differentiated values than ttHydrophobicity, ttHydrophobicity values are 'closer' together (the scale magnitude is not as polarized), the model is able to generalize better with the tt scale than the kd scale
+                        </div>
+                    </div>                    
+                </div>
+            
+        
+            <h2>Predict DNA-type</h2>
+            <!-- tt-Scale Model -->
+            <div id="tt-model-dnatype">
+                <div class="tt-model-dnatype">
+                    <h4>
+                        Classification Report
+                    </h4>
+                    <div class="table">
+                        <div>
+                            <style scoped>
+                                .dataframe tbody tr th:only-of-type {
+                                    vertical-align: middle;
+                                }
+                            
+                                .dataframe tbody tr th {
+                                    vertical-align: top;
+                                }
+                            
+                                .dataframe thead th {
+                                    text-align: right;
+                                }
+                            </style>
+                            <table border="1" class="dataframe">
+                              <thead>
+                                <tr style="text-align: right;">
+                                  <th></th>
+                                  <th>precision</th>
+                                  <th>recall</th>
+                                  <th>f1-score</th>
+                                  <th>support</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <th>0</th>
+                                  <td>0.894578</td>
+                                  <td>0.828780</td>
+                                  <td>0.860423</td>
+                                  <td>128005.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>1</th>
+                                  <td>0.519892</td>
+                                  <td>0.634765</td>
+                                  <td>0.571615</td>
+                                  <td>30427.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>2</th>
+                                  <td>0.466131</td>
+                                  <td>0.605744</td>
+                                  <td>0.526845</td>
+                                  <td>8043.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>3</th>
+                                  <td>0.074074</td>
+                                  <td>0.333333</td>
+                                  <td>0.121212</td>
+                                  <td>6.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>4</th>
+                                  <td>0.205063</td>
+                                  <td>0.373272</td>
+                                  <td>0.264706</td>
+                                  <td>217.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>5</th>
+                                  <td>0.000000</td>
+                                  <td>0.000000</td>
+                                  <td>0.000000</td>
+                                  <td>3.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>6</th>
+                                  <td>0.066667</td>
+                                  <td>0.250000</td>
+                                  <td>0.105263</td>
+                                  <td>4.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>7</th>
+                                  <td>0.000000</td>
+                                  <td>0.000000</td>
+                                  <td>0.000000</td>
+                                  <td>9.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>9</th>
+                                  <td>0.058824</td>
+                                  <td>0.058824</td>
+                                  <td>0.058824</td>
+                                  <td>17.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>11</th>
+                                  <td>0.035714</td>
+                                  <td>0.142857</td>
+                                  <td>0.057143</td>
+                                  <td>7.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>12</th>
+                                  <td>0.000000</td>
+                                  <td>0.000000</td>
+                                  <td>0.000000</td>
+                                  <td>21.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>accuracy</th>
+                                  <td>0.781727</td>
+                                  <td>0.781727</td>
+                                  <td>0.781727</td>
+                                  <td>0.781727</td>
+                                </tr>
+                                <tr>
+                                  <th>macro avg</th>
+                                  <td>0.210995</td>
+                                  <td>0.293416</td>
+                                  <td>0.233275</td>
+                                  <td>166759.000000</td>
+                                </tr>
+                                <tr>
+                                  <th>weighted avg</th>
+                                  <td>0.804303</td>
+                                  <td>0.781727</td>
+                                  <td>0.790532</td>
+                                  <td>166759.000000</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            </div>
+                    </div>
+                    <p><b>Accuracy: 78%</b></p>
+                </div>
+                <div class="tt-confusion-matrix-dna">
+                    <h4>
+                        Confusion Matrix
+                    </h4>
+                    <img src="assets\tables\tt-models_confusion-matrix-dnatype.png" with="100%"/>
+                </div>
+                <div class="tt-confusion-matrix-dna">
+                    <h4>
+                        Features
+                    </h4>
+                    <img src="assets\tables\tt-models_features-dnatype.png" with="100%"/>
+                </div>
+            </div>
+        </section>
+
+        <!-- Conclusion -->
+        <section id="conclusion">
+            <h1>
+                Conclusions
+            </h1>
+            Throughout the analysis we find the profiles of genomic versus non-genomic DNA. We find the key hallmarks of what makes life possible on Earth, specifically oxygen-dependent species within the mammalian kingdom. We find data pertaining to mitochondria to be of particular interest for it's variation. We also determine the most and least frequently used codons throughout the kingdoms of life, and how they pertain to function and efficiency. We find patterns in the size of data that life uses and despite their size, restrict the usage of specific codons to specialize the chemical activity within cells. Lastly, we attempt to model the data in hopes to replicate the amazing performance from Hallee & Khomtchouk, where they train a model with 96% accuracy for kingdoms and 99% accuracy for DNA types. The difference between the model determined in this study and the published model is that theirs uses a simple hard-voting ensemble of k-NN, SVM and RF classifiers, whereas ours uses only RF. Further steps to optimize the model would be (1) Balance the dataset (2) Standardize the dataset (3) Implement a hard-voting system, and experiment with a soft-voting system as well. Further algorithm would be required. Thank you for exploring this dataset with me!
+            <i class="bi bi-emoji-smile"></i>
+        </section>
+
+        <!-- References -->
+        <section id="references">
+            <h1>
+                References
+            </h1>
+            <ol>
+                <li>L. Hallee and B. B. Khomtchouk, “Machine learning classifiers predict key genomic and evolutionary traits across the kingdoms of life,” <i>Sci Rep</i>, vol. 13, no. 1, p. 2088, Feb. 2023, doi: <a href="https://doi.org/10.1038/s41598-023-28965-7">10.1038/s41598-023-28965-7</a>.</li>
+                <li>M. Nie, J. Wang, Z. Chen, C. Cao, and K. Zhang, “Systematic engineering enables efficient biosynthesis of L-phenylalanine in E. coli from inexpensive aromatic precursors,” <i>Microb Cell Fact</i>, vol. 23, no. 1, p. 12, Jan. 2024, doi: <a href="https://doi.org/10.1186/s12934-023-02282-0">10.1186/s12934-023-02282-0</a>.</li>
+                <li>P. Reifenberg and A. Zimmer, “Branched-chain amino acids: physico-chemical properties, industrial synthesis and role in signaling, metabolism and energy production,” <i>Amino Acids</i>, vol. 56, no. 1, p. 51, Aug. 2024, doi: <a href="https://doi.org/10.1007/s00726-024-03417-2">10.1007/s00726-024-03417-2</a>.</li>
+                <li>K. H. Schulpis, G. A. Karikas, and G. Kokotos, “Direct Molecular Interaction of Phenylalanine with DNA Measured by Reversed-Phase HPLC,” <i>Clinical Chemistry</i>, vol. 44, no. 1, pp. 178–179, Jan. 1998, doi: <a href="https://doi.org/10.1093/clinchem/44.1.178">10.1093/clinchem/44.1.178</a>.</li>
+                <li>S. Osawa, T. Ohama, T. H. Jukes, and K. Watanabe, “Evolution of the mitochondrial genetic code I. Origin of AGR serine and stop codons in metazoan mitochondria,” <i>J Mol Evol</i>, vol. 29, no. 3, pp. 202–207, Sep. 1989, doi: <a href="https://doi.org/10.1007/BF02100203">10.1007/BF02100203</a>.</li>
+            </ol>
+        </section>
+
+    </main>
+
+    <!-- JS Scripts -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <!-- Tooltip Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+    <!-- Lazy Loading for Web-pages -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+        let observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    let graphContainer = entry.target;
+                    let graphData = graphContainer.getAttribute("data-src");
+
+                    // Your Plotly graph rendering code here, for example:
+                    Plotly.newPlot(graphContainer, getData(graphData));
+
+                    observer.unobserve(graphContainer);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll(".graph").forEach(graph => {
+            observer.observe(graph);
+        });
+
+        // Example function to get data based on data-src
+        function getData(dataSrc) {
+            switch (dataSrc) {
+                case 'graph1-data':
+                    return [{x: [1, 2, 3], y: [2, 6, 3]}];
+                case 'graph2-data':
+                    return [{x: [1, 2, 3], y: [3, 7, 4]}];
+                // Add cases for other graphs
+                default:
+                    return [];
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
